@@ -1,12 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 
-#define INFROOTS 3
-#define NOROOT   0
-
-const double EPSILON = 1e-13;
+const double EPSILON = 1e-10;
 
 //----------------------------------------------
 //!  Solves a quadratic equation ax2+bx+c=0
@@ -52,18 +48,26 @@ int finding_lineal_roots (double a, double b, double* res);   // x + ay + b = 0
 //!
 //! @return is zero or not
 //!
-//!
-//!
 //-------------------------------------------
 
-bool is_zero (double a) {
+bool is_zero (double value);
 
-      return (fabs(a) < EPSILON) ? true : false;
+//-----------------------------------------
+//!
+//! unit tests for  finding_quadratic_roots
+//!
+//-----------------------------------------
+void check_quad();
 
-}
-
+enum nRoots {
+    NOROOT = 0,
+    ONEROOT = 1,
+    TWOROOTS =2,
+    INFROOTS = 3
+} ;
 
 int main () {
+    check_quad();
 
     printf ("# Dolgodvorov.ev@phystech.edu\n"
             "Solve of quadratic equation\n");
@@ -76,7 +80,7 @@ int main () {
     while (true){
 
         printf ("Enter a, b, c\n");
-        if (scanf ("%lg %lg %lg", &a, &b, &c) != 3){
+        if ((scanf ("%lg%lg%lg%c", &a, &b, &c, &d) != 4) || (d !='\n' && d!=' ')){
            printf ("enter isn`t correct\n");
            fflush (stdin);
            continue;
@@ -85,22 +89,22 @@ int main () {
         int number_of_roots = finding_quadratic_roots ( a, b, c, &x1, &x2);
 
         switch (number_of_roots) {
-             case NOROOT:
+             case nRoots :: NOROOT:
 
                 printf("There is no root\n");
                 break;
 
-             case 1:
+             case nRoots :: ONEROOT:
 
                 printf("There is only one root: %.3lg\n", is_zero(x1) ? 0.0 : x1);
                 break;
 
-             case 2:
+             case nRoots :: TWOROOTS:
 
                 printf("There are two roots: %.3lg %.3lg\n", is_zero(x1) ? 0.0 : x1, is_zero(x2) ? 0.0 : x2);
                 break;
 
-             case INFROOTS:
+             case nRoots :: INFROOTS:
 
                 printf("There are infinity number of roots\n");
                 break;
@@ -110,15 +114,20 @@ int main () {
                 printf("Something`s gone wrong\n");
 
         }
-        scanf("%c", &d);       // '\n'  after numbers
+
         while(true){
 
             printf ("Do you want to solve one more equation? y/n\n");
             scanf("%c", &agreement[0]);
-            for ( int i = 1; agreement[i-1] != '\n' && i < 10  ; i++)
+
+            agreement[1]='\n';
+            agreement[2]='\n'; // to catch symbols after yes and no words
+            agreement[3]='\n';
+
+            for ( int i = 1; agreement[i-1] != '\n' && agreement[i-1] != ' ' && i < 10  ; i++)
             scanf("%c", &agreement[i]);
 
-            if ( (agreement[0] == 'y'  &&
+            if (((agreement[0] == 'y'  &&
                   agreement[1] == 'e'  &&
                   agreement[2] == 's') ||
 
@@ -128,28 +137,40 @@ int main () {
 
                  (agreement[0] == 'Y'  &&
                   agreement[1] == 'E'  &&
-                  agreement[2] == 'S') ||
+                  agreement[2] == 'S'))&&
 
-                 (agreement[0] == 'y') ||
+                 (agreement[3] == '\n' ||
+                  agreement[3] == ' ') ||
 
-                 (agreement[0] == 'Y')
+                ((agreement[0] == 'y') ||
+
+                 (agreement[0] == 'Y'))&&
+
+                 (agreement[1] == '\n' ||
+                  agreement[1] == ' ')
                 )
 
                 break;
 
 
-            else if ( (agreement[0] == 'n') ||
+            else if (((agreement[0] == 'n') ||
 
-                      (agreement[0] == 'N') ||
+                      (agreement[0] == 'N'))&&
 
-                      (agreement[0] == 'N'  &&
+                      (agreement[1] == '\n' ||
+                       agreement[1] == ' ') ||
+
+                     ((agreement[0] == 'N'  &&
                        agreement[1] == 'O') ||
 
                       (agreement[0] == 'N'  &&
                        agreement[1] == 'o') ||
 
                       (agreement[0] == 'n'  &&
-                       agreement[1] == 'o')
+                       agreement[1] == 'o'))&&
+
+                      (agreement[2] == '\n' ||
+                       agreement[2] == ' ')
                     )
                 return 0;
 
@@ -168,19 +189,20 @@ int finding_lineal_roots (double a, double b, double *x) {
 
        if (is_zero(b))
 
-            return INFROOTS;
+            return nRoots :: INFROOTS;
 
         else       /* c != 0 */
 
-            return NOROOT;
+            return nRoots ::NOROOT;
 
     } else         /* b != 0 */
                 *x = -b / a;
 
-    return 1;
+    return nRoots:: ONEROOT;
 }
 
-int finding_quadratic_roots(double a , double b , double c , double *x1 , double *x2){
+int finding_quadratic_roots(double a , double b , double c , double *x1 , double *x2) {
+
     if(is_zero(a)){
 
         return finding_lineal_roots( b, c, x1);
@@ -191,7 +213,7 @@ int finding_quadratic_roots(double a , double b , double c , double *x1 , double
 
         if( D < 0 )
 
-            return NOROOT;
+            return nRoots :: NOROOT;
 
         else {
 
@@ -200,16 +222,61 @@ int finding_quadratic_roots(double a , double b , double c , double *x1 , double
             if(is_zero(D)){
 
                 *x1= - b / (2.0 * a);
-                return 1;
+                return nRoots :: ONEROOT;
 
             }else { /* D>0 */
 
                 *x1 = (- b + sqrt_D) / (2.0 * a);
                 *x2 = (- b - sqrt_D) / (2.0 * a);
 
-                return 2;
+                return nRoots :: TWOROOTS;
 
                 }
             }
     }
+}
+
+void check_quad() {
+double i,j,k;
+    double x1,x2;
+    int nR,num=0;
+    for (i=-4; i<=4; i+=0.5) {
+        for (j=-4; j<=4; j+=0.5) {
+            for (k=-4; k<=4; k+= 0.5){
+            num++;
+                nR = finding_quadratic_roots (i, j, k, &x1, &x2);
+                switch (nR) {
+             case nRoots :: NOROOT:
+                  ( (j * j - 4 * i * k < 0) || ( fabs(i) < EPSILON && fabs(j) < EPSILON && fabs(k) >= EPSILON ))?printf ("") : printf ("incorrect\n" "Test %d: %lg %lg %lg %lg %lg ",num , i, j, k, x1, x2);
+                break;
+
+             case nRoots :: ONEROOT:
+                ( fabs(i * x1 * x1 + j * x1 + k ) < EPSILON) ? printf ("") : printf ("incorrect\n" "Test %d: %lg %lg %lg %lg %lg ",num , i, j, k, x1, x2);
+                break;
+
+             case nRoots :: TWOROOTS:
+
+               ( fabs(i * x1 * x1 + j * x1 + k ) < EPSILON && fabs (i * x2 * x2 + j * x2 + k ) < EPSILON ) ? printf ("") : printf ("incorrect\n" "Test %d: %lg %lg %lg %lg %lg ",num , i, j, k, x1, x2);
+                break;
+
+             case nRoots :: INFROOTS:
+
+                (fabs(i) < EPSILON && fabs(j) < EPSILON && fabs(k) < EPSILON) ? printf ("") : printf ("incorrect\n" "Test %d: %lg %lg %lg %lg %lg ",num , i, j, k, x1, x2);
+                break;
+
+            default:
+
+                printf("Something`s gone wrong\n");
+
+        }
+            }
+        }
+    }
+}
+
+
+bool is_zero (double value) {
+
+      return ( fabs(value) <= EPSILON);
+
 }
